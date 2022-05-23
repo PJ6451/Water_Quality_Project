@@ -1,8 +1,9 @@
 import pandas
+import numpy
 
-def read_data():
+def read_data(path) -> pandas.DataFrame:
     #read csv
-    data = pandas.read_csv(r'C:\Users\16617\Downloads\safetoswim_2020-present_2022-05-23.csv')
+    data = pandas.read_csv(path)
 
     #keep only columns you need
     columns = [
@@ -22,36 +23,43 @@ def read_data():
         ]
 
     data = data[columns]
-
-    #save new csv
-    data.to_csv('safetoswim_2020-present_2022-05-23_transformed.csv')
-
+    return data
+    
 def data_transform(data: list,dic: dict) -> list:
-    for i in range(len(data)):
-        #add upper limit
-        row = data[i]
-        type = row["DW_AnalyteName"]
-        row["SingleSampleWQO"] = dic[type]
-        
-        #add exceedance
-        if row["Result"] is not None:
-            if float(row["Result"]) > row["SingleSampleWQO"]:
-                row["Exceedance"] = "Does Exceed Limit"
-            else:
-                row["Exceedance"] = "Does Not Exceed Limit"
-        else:
-            row["Exceedance"] = "Not Detected/Recorded"
-        
-        #overwrite row to data
-        data[i] = row
+    #add ssw column
+    data["Single Sample WQO"] = data["DW_AnalyteName"].map(dic)
+
+    # create a list of our conditions
+    conditions = [
+        (data["ResultQualCode"] == '=') & (data['Result'] > data["Single Sample WQO"]),
+        (data["ResultQualCode"] == '>') & (data['Result'] > data["Single Sample WQO"]),
+        (data["ResultQualCode"] == '<') & (data['Result'] > data["Single Sample WQO"]),
+        (data["ResultQualCode"] == '=') & (data['Result'] < data["Single Sample WQO"]),
+        (data["ResultQualCode"] == '<') & (data['Result'] < data["Single Sample WQO"]),
+        (data["ResultQualCode"] == '>') & (data['Result'] < data["Single Sample WQO"]),
+        (data['Result'] is None)
+        ]
+
+    # create a list of the values we want to assign for each condition
+    values = [
+        'Does Exceed Limit', 
+        'Does Exceed Limit', 
+        'May Exceed Limit', 
+        'Does Not Exceed Limit', 
+        'Does Not Exceed Limit',
+        'May Exceed Limit',  
+        'Not Detected/Recorded'
+        ]
+
+    # create a new column and use np.select to assign values to it using our lists as arguments
+    data['Exceedance'] = numpy.select(conditions, values)
 
     return data
 
+#### LOAD DATA #####
+data = read_data(r'C:\Users\16617\Downloads\safetoswim_1969-2010_2022-05-23.csv')
 
-#load data
-data = read_data()
-
-#Single Sample WQO
+#### DICTIONARY ####
 dic = {
     "Enterococcus":110,
     "E. coli":320,
@@ -59,6 +67,8 @@ dic = {
     "Coliform, Total":10000,
 }
 
+#### TRANSFORM DATA ####
 data = data_transform(data,dic)
 
-
+#### SAVE TO CSV ####
+data.to_csv('safetoswim_1969-2010_2022-05-23_transformed.csv')

@@ -22,10 +22,10 @@ def data_transform(data: list, dic: dict) -> list:
     return data
 
 
-#load data
+#### LOAD DATA #####
 data = get_data()
 
-#Single Sample WQO
+#### DICTIONARY ####
 dic = {
     "Enterococcus":110,
     "E. coli":320,
@@ -33,6 +33,7 @@ dic = {
     "Coliform, Total":10000,
 }
 
+#### TRANSFORM DATA ####
 data = data_transform(data,dic)
 
 

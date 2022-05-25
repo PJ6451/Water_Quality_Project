@@ -24,40 +24,66 @@ def read_data(path) -> pandas.DataFrame:
 
     data = data[columns]
     return data
-    
-def data_transform(data: list,dic: dict) -> list:
-    #add ssw column
-    data["Single Sample WQO"] = data["DW_AnalyteName"].map(dic)
 
+def map_exceedance(data):  
     # create a list of our conditions
     conditions = [
         (data["ResultQualCode"] == '=') & (data['Result'] > data["Single Sample WQO"]),
         (data["ResultQualCode"] == '>') & (data['Result'] > data["Single Sample WQO"]),
+        (data["ResultQualCode"] == '>=') & (data['Result'] > data["Single Sample WQO"]),
         (data["ResultQualCode"] == '<') & (data['Result'] > data["Single Sample WQO"]),
+        (data["ResultQualCode"] == '<=') & (data['Result'] > data["Single Sample WQO"]),
         (data["ResultQualCode"] == '=') & (data['Result'] < data["Single Sample WQO"]),
         (data["ResultQualCode"] == '<') & (data['Result'] < data["Single Sample WQO"]),
+        (data["ResultQualCode"] == '<=') & (data['Result'] < data["Single Sample WQO"]),
         (data["ResultQualCode"] == '>') & (data['Result'] < data["Single Sample WQO"]),
-        (data['Result'] is None)
+        (data["ResultQualCode"] == '>=') & (data['Result'] < data["Single Sample WQO"]),
+        (data['ResultQualCode'] == 'ND'),
+        (data['ResultQualCode'] == 'NR'),
+        (data['ResultQualCode'] == 'DNQ'),
+        (data['Result'] == data["Single Sample WQO"]),
+        (data["ResultQualCode"] == 'P') & (data['Result'] < data["Single Sample WQO"]),
+        (data["ResultQualCode"] == 'P') & (data['Result'] > data["Single Sample WQO"])
         ]
-
     # create a list of the values we want to assign for each condition
     values = [
         'Does Exceed Limit', 
+        'Does Exceed Limit',
         'Does Exceed Limit', 
+        'May Exceed Limit',
         'May Exceed Limit', 
-        'Does Not Exceed Limit', 
         'Does Not Exceed Limit',
-        'May Exceed Limit',  
-        'Not Detected/Recorded'
+        'Does Not Exceed Limit',  
+        'Does Not Exceed Limit',
+        'May Exceed Limit', 
+        'May Exceed Limit', 
+        'Not Detected/Recorded',
+        'Not Detected/Recorded',
+        'Not Detected/Recorded',
+        'Does Not Exceed Limit',
+        'Does Not Exceed Limit',
+        'Does Exceed Limit'
         ]
+    data['Exceedance'] = numpy.select(conditions, values)
+    return data
+
+def data_transform(data: list,dic: dict) -> list:
+    #drop rows where result null
+    data = data[data['Result'].notna()]
+
+    #drop rows where lat/long not usable
+    data = data[data["TargetLatitude"] > 0]
+
+    #add ssw column
+    data["Single Sample WQO"] = data["DW_AnalyteName"].map(dic)
 
     # create a new column and use np.select to assign values to it using our lists as arguments
-    data['Exceedance'] = numpy.select(conditions, values)
+    data = map_exceedance(data)
 
     return data
 
 #### LOAD DATA #####
-data = read_data(r'C:\Users\16617\Downloads\safetoswim_1969-2010_2022-05-23.csv')
+data = read_data(r'C:\Users\16617\Downloads\safetoswim_2020-present_2022-05-23.csv')
 
 #### DICTIONARY ####
 dic = {

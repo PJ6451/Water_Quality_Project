@@ -4,8 +4,17 @@
 # for updating data available to the user
 ####################################
 
+from numpy import datetime64
 import requests
 import pandas
+
+def get_date() -> str:
+    dates = pandas.read_csv(
+        r'safetoswim_6-1-2022_transformed.csv',
+        usecols = ["SampleDate"], 
+        dtype = datetime64
+        )
+    return str(dates.max())
 
 def create_url(date) -> str:
     #### CREATE SQL QUERY, URL FOR API CALL ####
@@ -25,7 +34,9 @@ def api_call(url_query:str) -> dict:
     return response.json()
 
 def get_data() -> pandas.DataFrame:
-    date = '2021-05-01'
+    #### GET DATE ####
+    date = get_date()
+
     #### GET URL STRING ####
     url_query = create_url(date)
 

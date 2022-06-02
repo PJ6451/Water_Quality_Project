@@ -1,5 +1,16 @@
+####################################
+# This script transforms data called 
+# from the Cal Open Data CEDEN API and 
+# saves it to the csv made from the 
+# historical script. Should be run on
+# a regular basis
+#################################### 
+
 from ca_open_data_api_2020 import *
 import pandas
+import numpy
+
+pandas.options.mode.chained_assignment = None  # default='warn'
 
 def map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:  
     # create a list of our conditions
@@ -53,9 +64,24 @@ def data_transform(data: pandas.DataFrame, dic: dict) -> pandas.DataFrame:
         "TargetLatitude",
         "TargetLongitude"
     ]
-    for column in columns:
-        data[column].loc[data[column] == -88] = 0
-        data[column].loc[data[column].isna()] = 0
+
+    for col in columns:
+        data[col] = numpy.where((data[col] == "NaN"),0,data[col])
+        data[col] = numpy.where((data[col] == "-88.0"),0,data[col])
+    
+    #### CHANGE DATA TYPES ####
+    num_cols = [
+        "TargetLatitude",
+        "TargetLongitude",
+        "Result"
+    ]
+
+    for col in num_cols:
+        data[col] = pandas.to_numeric(data[col])
+    
+    s = data["SampleDate"]
+    sss = s.str.split(pat="T",expand=True)
+    data["SampleDate"] = pandas.to_datetime(sss[0])
 
     #### ADD SSW COLUMN ####
     data["Single Sample WQO"] = data["DW_AnalyteName"].map(dic)
@@ -64,20 +90,9 @@ def data_transform(data: pandas.DataFrame, dic: dict) -> pandas.DataFrame:
     data = map_exceedance(data)
 
     #### ADD COLUMNS FOR MONTHS, YEARS ####
-
-    #### ADD GEOMEAN COLUMNS ####
-    data["Entero_GM_1"] = 0
-    data["Entero_GM_2"] = 0
-    data["Entero_GM_3"] = 0
-    data["E_coli_GM_1"] = 0
-    data["E_coli_GM_2"] = 0
-    data["E_coli_GM_3"] = 0
-    data["Colif_fec_GM_1"] = 0
-    data["Colif_fec_GM_2"] = 0
-    data["Colif_fec_GM_3"] = 0
-    data["Colif_tot_GM_1"] = 0
-    data["Colif_tot_GM_2"] = 0
-    data["Colif_tot_GM_3"] = 0
+    data['Year'] = pandas.to_datetime(data["SampleDate"]).dt.year
+    data['Month'] = pandas.to_datetime(data["SampleDate"]).dt.month
+    data['Day'] = pandas.to_datetime(data["SampleDate"]).dt.day
 
     return data
 
@@ -95,4 +110,5 @@ dic = {
 #### TRANSFORM DATA ####
 data = data_transform(data,dic)
 
-
+#### SAVE TO CSV ####
+data.to_csv('safetoswim_6-1-2022_transformed.csv',index=False, mode='a', header=False)

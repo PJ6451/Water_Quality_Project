@@ -1,8 +1,14 @@
+####################################
+# This script handles all the API Calls 
+# to the Cal Open Data CEDEN database 
+# for updating data available to the user
+####################################
+
 import requests
 import pandas
 
 def create_url(date) -> str:
-    #### Create query, url ####
+    #### CREATE SQL QUERY, URL FOR API CALL ####
     columns = '"StationCode","DW_AnalyteName",  "SampleDate","TargetLatitude","TargetLongitude","Unit","Program","ParentProject","Project","MethodName","RL","Result","ResultQualCode"'
     table = '"1987c159-ce07-47c6-8d4f-4483db6e6460"'
     cond  = ' "ParentProject" LIKE \'%San Diego%\' AND "SampleDate" > DATE \'' + date + '\''
@@ -11,7 +17,7 @@ def create_url(date) -> str:
     return url + query
 
 def api_call(url_query:str) -> dict:
-    #### API call ####
+    #### API CALL ####
     response = requests.request("GET", url_query)
     print("Endpoint Response Code: = " + str(response.status_code))
     if response.status_code != 200:
@@ -20,19 +26,19 @@ def api_call(url_query:str) -> dict:
 
 def get_data() -> pandas.DataFrame:
     date = '2021-05-01'
-    #### get url string ####
+    #### GET URL STRING ####
     url_query = create_url(date)
 
-    #### API call ####
+    #### API CALL ####
     my_dict = api_call(url_query)
 
-    #### Parse out raw data ####
+    #### PARSE OUT RAW DATA ####
     jsdata = my_dict['result']['records']
     
-    # Transform to dataframe
+    #### TRANSFORM RAW DATA TO PANDAS DATAFRAME ####
     data = pandas.DataFrame(jsdata)
 
-    # keep and rearange only columns you need
+    #### KEEP/REARANGE COLUMNS ####
     columns = [
         "StationCode",
         "Program",
@@ -49,6 +55,5 @@ def get_data() -> pandas.DataFrame:
         ]
 
     data = data[columns]
-    return data
 
-get_data()
+    return data

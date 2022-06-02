@@ -1,11 +1,18 @@
+####################################
+# This script transforms data called 
+# from the Cal Open Data CEDEN crv's
+# to be transformed and combined into
+# a single csv for later use
+#################################### 
+
 import pandas
 import numpy
 
 def read_data(path:str) -> pandas.DataFrame:
-    #read csv
+    #### READ CSV ####
     data = pandas.read_csv(path,low_memory=False)
 
-    #keep only columns you need
+    #### KEEP/RAARANGE COLUMNS ####
     columns = [
         "StationCode",
         "Program",
@@ -25,7 +32,7 @@ def read_data(path:str) -> pandas.DataFrame:
     return data
 
 def map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:  
-    # create a list of our conditions
+    #### LIST OF CONDITIONS ####
     conditions = [
         (data["ResultQualCode"] == '=') & (data['Result'] > data["Single Sample WQO"]),
         (data["ResultQualCode"] == '>') & (data['Result'] > data["Single Sample WQO"]),
@@ -44,7 +51,7 @@ def map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         (data["ResultQualCode"] == 'P') & (data['Result'] < data["Single Sample WQO"]),
         (data["ResultQualCode"] == 'P') & (data['Result'] > data["Single Sample WQO"])
         ]
-    # create a list of the values we want to assign for each condition
+    #### LIST OF VALUES FOR EACH CONDITION ####
     values = [
         'Does Exceed Limit', 
         'Does Exceed Limit',
@@ -63,7 +70,7 @@ def map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         'Does Not Exceed Limit',
         'Does Exceed Limit'
         ]
-    # map values
+    #### MAP VALUES ####
     data['Exceedance'] = numpy.select(conditions, values)
     return data
 
@@ -80,6 +87,20 @@ def data_transform(data: pandas.DataFrame, dic: dict) -> pandas.DataFrame:
         data[column].loc[data[column] == -88] = 0
         data[column].loc[data[column].isna()] = 0
 
+    #### CHANGE DATA TYPES ####
+    num_cols = [
+        "TargetLatitude",
+        "TargetLongitude",
+        "Result"
+    ]
+
+    for col in num_cols:
+        data[col] = pandas.to_numeric(data[col])
+    
+    s = data["SampleDate"]
+    sss = s.str.split(pat="T",expand=True)
+    data["SampleDate"] = pandas.to_datetime(sss[0])
+
     #### ADD SSW COLUMN ####
     data["Single Sample WQO"] = data["DW_AnalyteName"].map(dic)
 
@@ -87,27 +108,16 @@ def data_transform(data: pandas.DataFrame, dic: dict) -> pandas.DataFrame:
     data = map_exceedance(data)
 
     #### ADD COLUMNS FOR MONTHS, YEARS ####
-
-    #### ADD GEOMEAN COLUMNS ####
-    data["Entero_GM_1"] = 0
-    data["Entero_GM_2"] = 0
-    data["Entero_GM_3"] = 0
-    data["E_coli_GM_1"] = 0
-    data["E_coli_GM_2"] = 0
-    data["E_coli_GM_3"] = 0
-    data["Colif_fec_GM_1"] = 0
-    data["Colif_fec_GM_2"] = 0
-    data["Colif_fec_GM_3"] = 0
-    data["Colif_tot_GM_1"] = 0
-    data["Colif_tot_GM_2"] = 0
-    data["Colif_tot_GM_3"] = 0
+    data['Year'] = pandas.to_datetime(data["SampleDate"]).dt.year
+    data['Month'] = pandas.to_datetime(data["SampleDate"]).dt.month
+    data['Day'] = pandas.to_datetime(data["SampleDate"]).dt.day
 
     return data
 
 #### LOAD DATA #####
-data1 = read_data(r'C:\Users\16617\Downloads\safetoswim_1969-2010_2022-05-23.csv')
-data2 = read_data(r'C:\Users\16617\Downloads\safetoswim_2010-2020_2022-05-23.csv')
-data3 = read_data(r'C:\Users\16617\Downloads\safetoswim_2020-present_2022-05-23.csv')
+data_1969_2010    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/18c57345-bf87-4c46-b358-b634d36be4d2/download/safetoswim_1969-2010_2022-06-01.csv')
+data_2010_2020    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/7639446f-8c62-43d9-a526-8bc7952dd8bd/download/safetoswim_2010-2020_2022-06-01.csv')
+data_2020_present = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/1987c159-ce07-47c6-8d4f-4483db6e6460/download/safetoswim_2020-present_2022-06-01.csv')
 
 #### DICTIONARY ####
 dic = {
@@ -118,13 +128,13 @@ dic = {
 }
 
 #### TRANSFORM DATA ####
-data1 = data_transform(data1,dic)
-data2 = data_transform(data2,dic)
-data3 = data_transform(data3,dic)
+data1 = data_transform(data_1969_2010,dic)
+data2 = data_transform(data_2010_2020,dic)
+data3 = data_transform(data_2020_present,dic)
 
 #### COMINE DATA ####
 data = [data1,data2,data3]
 result = pandas.concat(data)
 
 #### SAVE TO CSV ####
-result.to_csv('safetoswim_1969-present_2022-05-23_transformed.csv')
+result.to_csv('safetoswim_6-1-2022_transformed.csv',index=False)

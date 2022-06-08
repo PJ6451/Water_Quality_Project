@@ -7,14 +7,17 @@
 from numpy import datetime64
 import requests
 import pandas
+import datetime
 
 def get_date() -> str:
     dates = pandas.read_csv(
         r'safetoswim_6-1-2022_transformed.csv',
         usecols = ["SampleDate"], 
-        dtype = datetime64
+        parse_dates = ["SampleDate"]
         )
-    return str(dates.max())
+    dates = dates[dates["SampleDate"] < datetime.datetime.now()]
+    date_str = str(dates["SampleDate"].max())
+    return date_str[:10]
 
 def create_url(date) -> str:
     #### CREATE SQL QUERY, URL FOR API CALL ####

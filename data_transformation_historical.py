@@ -8,6 +8,8 @@
 import pandas
 import numpy
 
+pandas.options.mode.chained_assignment = None  # default='warn'
+
 def read_data(path:str) -> pandas.DataFrame:
     #### READ CSV ####
     data = pandas.read_csv(path,low_memory=False)
@@ -19,7 +21,7 @@ def read_data(path:str) -> pandas.DataFrame:
         "Project",
         "TargetLatitude",
         "TargetLongitude",
-        "DW_AnalyteName",
+        "Analyte",
         "Unit",
         "SampleDate",
         "MethodName",
@@ -97,9 +99,9 @@ def data_transform(data: pandas.DataFrame, dic: dict) -> pandas.DataFrame:
     for col in num_cols:
         data[col] = pandas.to_numeric(data[col])
     
-    s = data["SampleDate"]
-    sss = s.str.split(pat="T",expand=True)
-    data["SampleDate"] = pandas.to_datetime(sss[0])
+    dates = data["SampleDate"]
+    dates_split = dates.str.split(pat="T",expand=True)
+    data["SampleDate"] = pandas.to_datetime(dates_split[0])
 
     #### ADD SSW COLUMN ####
     data["Single Sample WQO"] = data["DW_AnalyteName"].map(dic)
@@ -111,6 +113,11 @@ def data_transform(data: pandas.DataFrame, dic: dict) -> pandas.DataFrame:
     data['Year'] = pandas.to_datetime(data["SampleDate"]).dt.year
     data['Month'] = pandas.to_datetime(data["SampleDate"]).dt.month
     data['Day'] = pandas.to_datetime(data["SampleDate"]).dt.day
+
+    #### ADD COLUMNS FOR GEOMEANS ####
+    data['Geomean30'] = 0
+    data['Geomean45'] = 0
+    data['Geomean60'] = 0
 
     return data
 
@@ -125,6 +132,7 @@ dic = {
     "E. coli":320,
     "Coliform, Fecal":400,
     "Coliform, Total":10000,
+    "HF183":100
 }
 
 #### TRANSFORM DATA ####

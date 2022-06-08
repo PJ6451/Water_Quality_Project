@@ -1,20 +1,16 @@
 import numpy
 import pandas
+import scipy
 
-#### READ DATA ####
-data = pandas.read_csv(
-    r'C:\Users\16617\Downloads\safetoswim_2020-present_2022-05-23.csv', 
-    low_memory = False
-    )
+def thirty_day_diff(data):
+    return data
 
+def fourtyfive_day_diff(data):
+    return data
 
-#### COMPUTE MONTHLY GEOMEAN ####
+def sixty_day_diff(data):
+    return data
 
-
-#### COMPUTE ROLLING GEOMEAN ####
-
-
-#### COMPUTE OTHER GEOMEAN ####
-
-
-#### SAVE DATA ####
+def geo_mean(data):
+    num = scipy.stats.gmean(data.loc[:,"Result"])
+    return num

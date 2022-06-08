@@ -38,8 +38,8 @@ def api_call(url_query:str) -> dict:
 
 def get_data() -> pandas.DataFrame:
     #### GET DATE ####
-    date = get_date()
-
+    #date = get_date()
+    date = '05-01-2022'
     #### GET URL STRING ####
     url_query = create_url(date)
 

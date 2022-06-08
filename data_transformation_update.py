@@ -9,6 +9,7 @@
 from ca_open_data_api_2020 import *
 import pandas
 import numpy
+import geomean
 
 pandas.options.mode.chained_assignment = None  # default='warn'
 
@@ -98,7 +99,7 @@ def data_transform(data: pandas.DataFrame, dic: dict) -> pandas.DataFrame:
     data['Geomean30'] = 0
     data['Geomean45'] = 0
     data['Geomean60'] = 0
-
+    
     return data
 
 #### LOAD DATA #####

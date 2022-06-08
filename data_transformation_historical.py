@@ -7,6 +7,7 @@
 
 import pandas
 import numpy
+import geomean
 
 pandas.options.mode.chained_assignment = None  # default='warn'
 
@@ -119,6 +120,8 @@ def data_transform(data: pandas.DataFrame, dic: dict) -> pandas.DataFrame:
     data['Geomean45'] = 0
     data['Geomean60'] = 0
 
+    data = geomean.geo_mean(data)
+
     return data
 
 #### LOAD DATA #####
@@ -145,4 +148,4 @@ data = [data1,data2,data3]
 result = pandas.concat(data)
 
 #### SAVE TO CSV ####
-result.to_csv('safetoswim_6-1-2022_transformed.csv',index=False)
+result.to_csv('safetoswim_6-8-2022_transformed.csv',index=False)

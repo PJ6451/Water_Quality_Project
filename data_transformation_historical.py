@@ -22,7 +22,7 @@ def read_data(path:str) -> pandas.DataFrame:
         "Project",
         "TargetLatitude",
         "TargetLongitude",
-        "Analyte",
+        "DW_AnalyteName",
         "Unit",
         "SampleDate",
         "MethodName",

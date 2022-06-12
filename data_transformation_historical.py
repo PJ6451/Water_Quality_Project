@@ -74,7 +74,7 @@ def map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         'Does Exceed Limit'
         ]
     #### MAP VALUES ####
-    data['Exceedance'] = numpy.select(conditions, values)
+    data['SSM_Exceedance'] = numpy.select(conditions, values)
     return data
 
 def data_transform(data: pandas.DataFrame, dic: dict) -> pandas.DataFrame:
@@ -118,8 +118,8 @@ def data_transform(data: pandas.DataFrame, dic: dict) -> pandas.DataFrame:
 
     #### ADD COLUMNS FOR GEOMEANS ####
     data['Geomean30'] = 0
-    data['Geomean45'] = 0
-    data['Geomean60'] = 0
+    data['Geomean42'] = 0
+    data['STV'] = 0
 
     data = geomean.gm_calc(data)
 

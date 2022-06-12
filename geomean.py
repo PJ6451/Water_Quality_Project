@@ -3,31 +3,24 @@ import pandas
 from scipy import stats
 import datetime
 
-def thirty_day_diff(data,start_date):
+def thirty_day_diff(data, start_date):
     end_date = start_date - datetime.timedelta(days = 30)
     mask = (data['SampleDate'] <= start_date) & (data['SampleDate'] >= end_date)
-    data = data.loc[mask]
-    return data
+    return data.loc[mask]
 
-def fourtyfive_day_diff(data,start_date):
-    end_date = start_date - datetime.timedelta(days = 45)
+def fourtyfive_day_diff(data, start_date):
+    end_date = start_date - datetime.timedelta(days = 42)
     mask = (data['SampleDate'] <= start_date) & (data['SampleDate'] >= end_date)
-    data = data.loc[mask]
-    return data
-
-def sixty_day_diff(data,start_date):
-    end_date = start_date - datetime.timedelta(days = 60)
-    mask = (data['SampleDate'] <= start_date) & (data['SampleDate'] >= end_date)
-    data = data.loc[mask]
-    return data
+    return data.loc[mask]
 
 def geo_mean(data):
     if not data.empty:
-        num = stats.gmean(data.loc[:,"Result"])
+        if data.shape[0] >= 5:
+            return stats.gmean(data)
+        else:
+            return "Less than five samples, geomean not calculated"
     else:
-        num = 0
-    
-    return num
+        return 0 
 
 def gm_calc(data):
     for station in data["StationCode"].unique():
@@ -38,15 +31,10 @@ def gm_calc(data):
                 mask = (data['SampleDate'] == date) & (data['StationCode'] == station) & (data["DW_AnalyteName"] == analyte)
                 #### 30 DAY GEOMEAN ####
                 data30 = thirty_day_diff(analyte_station_data,date)
-                geomean = geo_mean(data30)
+                geomean = geo_mean(data30.loc[:,"Result"])
                 data.loc[mask, 'Geomean30'] = geomean
-                #### 45 DAY GEOMEAN ####
+                #### 42 DAY GEOMEAN ####
                 data45 = fourtyfive_day_diff(analyte_station_data,date)
-                geomean = geo_mean(data45)
+                geomean = geo_mean(data45.loc[:,"Result"])
                 data.loc[mask, 'Geomean45'] = geomean
-                #### 60 DAY GEOMEAN ####
-                data60 = sixty_day_diff(analyte_station_data,date)
-                geomean = geo_mean(data60)
-                data.loc[mask, 'Geomean60'] = geomean
-
     return data

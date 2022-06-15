@@ -4,7 +4,6 @@
 # for updating data available to the user
 ####################################
 
-from numpy import datetime64
 import requests
 import pandas
 import datetime

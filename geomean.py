@@ -1,4 +1,3 @@
-from calendar import month
 import numpy
 import pandas
 from scipy import stats

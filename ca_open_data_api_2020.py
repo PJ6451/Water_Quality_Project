@@ -9,8 +9,9 @@ import pandas
 import datetime
 
 def get_date() -> str:
+    #### GETS MAX DATE FROM PREVIOUS DATE SET ####
     dates = pandas.read_csv(
-        r'safetoswim_6-1-2022_transformed.csv',
+        r'safetoswim_transformed.csv',
         usecols = ["SampleDate"], 
         parse_dates = ["SampleDate"]
         )
@@ -37,8 +38,7 @@ def api_call(url_query:str) -> dict:
 
 def get_data() -> pandas.DataFrame:
     #### GET DATE ####
-    #date = get_date()
-    date = '05-01-2022'
+    date = get_date()
     #### GET URL STRING ####
     url_query = create_url(date)
 

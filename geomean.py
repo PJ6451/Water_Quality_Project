@@ -19,7 +19,7 @@ def geo_mean(data):
     #### CALCULATES GEOMEAN, RETURNS RELEVANT RESULT ####
     if numpy.size(data):
         if data.shape[0] >= 5:
-            return (numpy.prod(data))**(1/numpy.shape[0])
+            return (numpy.prod(data))**(1/data.shape[0])
         else:
             return "Less than five samples, geomean not calculated"
     else:
@@ -37,8 +37,8 @@ def gm_calc(data):
             for date in analyte_station_data["SampleDate"]:
                 mask = (data['SampleDate'] == date) & (data['StationCode'] == station) & (data["DW_AnalyteName"] == analyte)
                 #### ONLY DO CALCULATIONS FOR DATA WITHIN 12 WEEKS OF MAX ####
-                if date > max(analyte_station_data["SampleDate"]) - datetime.timedelta(weeks = 12):
-                    #### ANALYTES THAT NEED DIFFERENT CALCULATIONS ####
+                if date > max(analyte_station_data["SampleDate"]) - datetime.timedelta(weeks = 52):
+                #### ANALYTES THAT NEED DIFFERENT CALCULATIONS ####
                     gm30markers = ["Enterococcus", "Coliform, Fecal", "Coliform, Total"]
                     gm42markers = ["Enterococcus", "E. coli"]
                     stvmarkers = ["Enterococcus"]

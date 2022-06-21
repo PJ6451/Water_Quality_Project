@@ -83,7 +83,7 @@ def gm_30_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         (data["Geomean30"] > data['GM_30_WQO']),
         (data["Geomean30"] < data['GM_30_WQO']),
         (data["Geomean30"] == data['GM_30_WQO']),
-        (data["Geomean30"] == 'Not Calculated')
+        (data["Geomean30"] == numpy.nan)
         ]
     #### LIST OF VALUES FOR EACH CONDITION ####
     values = [
@@ -102,7 +102,7 @@ def gm_42_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         (data["Geomean42"] > data['GM_42_WQO']),
         (data["Geomean42"] < data['GM_42_WQO']),
         (data["Geomean42"] == data['GM_42_WQO']),
-        (data["Geomean42"] == 'Not Calculated')
+        (data["Geomean42"] == numpy.nan)
         ]
     #### LIST OF VALUES FOR EACH CONDITION ####
     values = [
@@ -222,7 +222,7 @@ data = pandas.concat(data)
 data = geomean.gm_calc(data)
 data = gm_30_map_exceedance(data)
 data = gm_42_map_exceedance(data)
-data = stv_42_map_exceedance(data)
+#data = stv_42_map_exceedance(data)
 
 #### SAVE TO CSV ####
 data.to_csv('safetoswim_transformed.csv',index=False)

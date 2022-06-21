@@ -36,8 +36,9 @@ def gm_calc(data):
             #### SLICE DATA BY DATE ####
             for date in analyte_station_data["SampleDate"]:
                 mask = (data['SampleDate'] == date) & (data['StationCode'] == station) & (data["DW_AnalyteName"] == analyte)
+                one_year = max(analyte_station_data["SampleDate"]) - datetime.timedelta(weeks = 52)
                 #### ONLY DO CALCULATIONS FOR DATA WITHIN 12 WEEKS OF MAX ####
-                if date > max(analyte_station_data["SampleDate"]) - datetime.timedelta(weeks = 52):
+                if date > one_year:
                 #### ANALYTES THAT NEED DIFFERENT CALCULATIONS ####
                     gm30markers = ["Enterococcus", "Coliform, Fecal", "Coliform, Total"]
                     gm42markers = ["Enterococcus", "E. coli"]

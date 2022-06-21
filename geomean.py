@@ -1,6 +1,10 @@
+############################
+# Script calculates geo-mean
+# for relevant dates
+############################
+
 import numpy
 import pandas
-from scipy import stats
 import datetime
 
 def thirty_day_diff(data, start_date):

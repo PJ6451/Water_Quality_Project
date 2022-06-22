@@ -183,6 +183,8 @@ def data_transform(data: pandas.DataFrame) -> pandas.DataFrame:
     dates = data["SampleDate"]
     dates_split = dates.str.split(pat="T",expand=True)
     data["SampleDate"] = pandas.to_datetime(dates_split[0])
+    data.set_index('SampleDate', inplace=True)
+    data = data.sort_index(ascending=False)
     
     data["Result"] = data["Result"].abs()
 
@@ -192,37 +194,46 @@ def data_transform(data: pandas.DataFrame) -> pandas.DataFrame:
     data["GM_30_WQO"] = data["DW_AnalyteName"].map(gm_30_dic)
     data["GM_42_WQO"] = data["DW_AnalyteName"].map(gm_42_dic)
 
-    #### ADD SSM EXCEEDANCE COLUMN ####
-    data = ssm_map_exceedance(data)
-
     #### ADD COLUMNS FOR GEOMEANS ####
-    data['STV'] = 'Not Calculated'
-    data['Geomean30'] = 'Not Calculated'
-    data['Geomean42'] = 'Not Calculated'
-    data['STV_Exceedance'] = ''
-    data['GM_30_Exceedance'] = ''
-    data['GM_42_Exceedance'] = ''
+    data['STV'] = numpy.nan
+    data['Geomean30'] = numpy.nan
+    data['Geomean42'] = numpy.nan
 
     return data
 
 
 #### LOAD DATA #####
-data_1969_2010    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/18c57345-bf87-4c46-b358-b634d36be4d2/download/safetoswim_1969-2010_2022-06-17.csv')
-data_2010_2020    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/7639446f-8c62-43d9-a526-8bc7952dd8bd/download/safetoswim_2010-2020_2022-06-17.csv')
-data_2020_present = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/1987c159-ce07-47c6-8d4f-4483db6e6460/download/safetoswim_2020-present_2022-06-17.csv')
+data1    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/18c57345-bf87-4c46-b358-b634d36be4d2/download/safetoswim_1969-2010_2022-06-17.csv')
+data2    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/7639446f-8c62-43d9-a526-8bc7952dd8bd/download/safetoswim_2010-2020_2022-06-17.csv')
+data3    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/1987c159-ce07-47c6-8d4f-4483db6e6460/download/safetoswim_2020-present_2022-06-17.csv')
 
-#### TRANSFORM DATA ####
-data1 = data_transform(data_1969_2010)
-data2 = data_transform(data_2010_2020)
-data3 = data_transform(data_2020_present)
+#### COMBINE AND TRANSFORM DATA ####
+data12 = [data1,data2]
+data12 = pandas.concat(data12)
+data12 = data_transform(data12)
+data3 = data_transform(data3)
 
-#### COMINE DATA ####
-data = [data1,data2,data3]
-data = pandas.concat(data)
-data = geomean.gm_calc(data)
+
+#### DO CALCULATIONS/MAPPING ####
+gm30markers = ["Enterococcus", "Coliform, Fecal", "Coliform, Total"]
+gm42markers = ["Enterococcus", "E. coli"]
+
+data_for_calc = data3[~data3["ResultQualCode"].isin(['ND','NR','DNQ'])]
+data_not_for_calc = data3[data3["ResultQualCode"].isin(['ND','NR','DNQ'])]
+data_calc_30 = data3[data3["DW_AnalyteName"].isin(gm30markers)]
+data_calc_42 = data3[data3["DW_AnalyteName"].isin(gm42markers)]
+
+data_calc_30 = geomean.gm_calc(data_calc_30,"30D")
+data_calc_42 = geomean.gm_calc(data_calc_30,"42D")
+
+data3 = [data_calc_30,data_calc_42,data_not_for_calc]
+data3 = pandas.concat(data3)
+data = [data12,data3]
+data = pandas.concat(data12)
+data = data.sort_index(ascending=False)
+data = ssm_map_exceedance(data)
 data = gm_30_map_exceedance(data)
 data = gm_42_map_exceedance(data)
-#data = stv_42_map_exceedance(data)
 
 #### SAVE TO CSV ####
 data.to_csv('safetoswim_transformed.csv',index=False)

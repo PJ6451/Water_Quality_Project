@@ -163,6 +163,8 @@ def data_transform(data: pandas.DataFrame) -> pandas.DataFrame:
     dates = data["SampleDate"]
     dates_split = dates.str.split(pat="T",expand=True)
     data["SampleDate"] = pandas.to_datetime(dates_split[0])
+    data.set_index('SampleDate', inplace=True)
+    data = data.sort_index(ascending=False)
 
     data["Result"] = data["Result"].abs()
 

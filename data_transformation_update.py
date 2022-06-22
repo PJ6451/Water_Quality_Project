@@ -15,26 +15,27 @@ import datetime
 pandas.options.mode.chained_assignment = None  # default='warn'
 
 def ssm_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:  
-    # create a list of our conditions
+    #### LIST OF CONDITIONS ####
     conditions = [
-        (data["ResultQualCode"] == '=') & (data['Result'] > data["Single Sample WQO"]),
-        (data["ResultQualCode"] == '>') & (data['Result'] > data["Single Sample WQO"]),
-        (data["ResultQualCode"] == '>=') & (data['Result'] > data["Single Sample WQO"]),
-        (data["ResultQualCode"] == '<') & (data['Result'] > data["Single Sample WQO"]),
-        (data["ResultQualCode"] == '<=') & (data['Result'] > data["Single Sample WQO"]),
-        (data["ResultQualCode"] == '=') & (data['Result'] < data["Single Sample WQO"]),
-        (data["ResultQualCode"] == '<') & (data['Result'] < data["Single Sample WQO"]),
-        (data["ResultQualCode"] == '<=') & (data['Result'] < data["Single Sample WQO"]),
-        (data["ResultQualCode"] == '>') & (data['Result'] < data["Single Sample WQO"]),
-        (data["ResultQualCode"] == '>=') & (data['Result'] < data["Single Sample WQO"]),
+        (data["ResultQualCode"] == '=') & (data['Result'] > data["SSM_WQO"]),
+        (data["ResultQualCode"] == '>') & (data['Result'] > data["SSM_WQO"]),
+        (data["ResultQualCode"] == '>=') & (data['Result'] > data["SSM_WQO"]),
+        (data["ResultQualCode"] == '<') & (data['Result'] > data["SSM_WQO"]),
+        (data["ResultQualCode"] == '<=') & (data['Result'] > data["SSM_WQO"]),
+        (data["ResultQualCode"] == '=') & (data['Result'] < data["SSM_WQO"]),
+        (data["ResultQualCode"] == '<') & (data['Result'] < data["SSM_WQO"]),
+        (data["ResultQualCode"] == '<=') & (data['Result'] < data["SSM_WQO"]),
+        (data["ResultQualCode"] == '>') & (data['Result'] < data["SSM_WQO"]),
+        (data["ResultQualCode"] == '>=') & (data['Result'] < data["SSM_WQO"]),
         (data['ResultQualCode'] == 'ND'),
         (data['ResultQualCode'] == 'NR'),
         (data['ResultQualCode'] == 'DNQ'),
-        (data['Result'] == data["Single Sample WQO"]),
-        (data["ResultQualCode"] == 'P') & (data['Result'] < data["Single Sample WQO"]),
-        (data["ResultQualCode"] == 'P') & (data['Result'] > data["Single Sample WQO"])
+        (data['Result'] == data["SSM_WQO"]),
+        (data["ResultQualCode"] == 'P') & (data['Result'] < data["SSM_WQO"]),
+        (data["ResultQualCode"] == 'P') & (data['Result'] > data["SSM_WQO"]),
+        (pandas.isna(data["SSM_WQO"]))
         ]
-    # create a list of the values we want to assign for each condition
+    #### LIST OF VALUES FOR EACH CONDITION ####
     values = [
         'Does Exceed Limit', 
         'Does Exceed Limit',
@@ -49,12 +50,13 @@ def ssm_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         'Not Detected/Recorded',
         'Not Detected/Recorded',
         'Not Detected/Recorded',
+        'Equals Limit',
         'Does Not Exceed Limit',
-        'Does Not Exceed Limit',
-        'Does Exceed Limit'
+        'Does Exceed Limit',
+        'Not Applicable'
         ]
-    # map values
-    data['Exceedance'] = numpy.select(conditions, values)
+    #### MAP VALUES ####
+    data['SSM_Exceedance'] = numpy.select(conditions, values)
     return data
 
 def gm_30_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
@@ -63,13 +65,13 @@ def gm_30_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         (data["Geomean30"] > data['GM_30_WQO']),
         (data["Geomean30"] < data['GM_30_WQO']),
         (data["Geomean30"] == data['GM_30_WQO']),
-        (data["Geomean30"] == 'Not Calculated')
+        (pandas.isna(data["Geomean30"]))
         ]
     #### LIST OF VALUES FOR EACH CONDITION ####
     values = [
         'Does Exceed Limit', 
         'Does Not Exceed Limit',
-        'Does Not Exceed Limit',  
+        'Equals Limit',  
         'Not Determined'
         ]
     #### MAP VALUES ####
@@ -82,36 +84,17 @@ def gm_42_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         (data["Geomean42"] > data['GM_42_WQO']),
         (data["Geomean42"] < data['GM_42_WQO']),
         (data["Geomean42"] == data['GM_42_WQO']),
-        (data["Geomean42"] == 'Not Calculated')
+        (pandas.isna(data["Geomean42"]))
         ]
     #### LIST OF VALUES FOR EACH CONDITION ####
     values = [
         'Does Exceed Limit', 
         'Does Not Exceed Limit',
-        'Does Not Exceed Limit',  
+        'Equals Limit',  
         'Not Determined'
         ]
     #### MAP VALUES ####
     data['GM_42_Exceedance'] = numpy.select(conditions, values)
-    return data
-
-def stv_42_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
-    #### LIST OF CONDITIONS ####
-    conditions = [
-        (data["STV"] > data['STV_WQO']),
-        (data["STV"] < data['STV_WQO']),
-        (data["STV"] == data['STV_WQO']),
-        (data["STV"] == 'Not Calculated')
-        ]
-    #### LIST OF VALUES FOR EACH CONDITION ####
-    values = [
-        'Does Exceed Limit', 
-        'Does Not Exceed Limit',
-        'Does Not Exceed Limit',  
-        'Not Determined'
-        ]
-    #### MAP VALUES ####
-    data['STV_Exceedance'] = numpy.select(conditions, values)
     return data
 
 def data_transform(data: pandas.DataFrame) -> pandas.DataFrame:
@@ -192,14 +175,13 @@ data = ca_open_data_api_2020.get_data()
 #### TRANSFORM DATA ####
 data = data_transform(data)
 
-#### APPEND TO CSV ####
-data.to_csv('safetoswim_transformed.csv',index=False, mode='a', header=False)
-
 #### READ CSV TO CALCULATE GEOMEAN ####
-data = pandas.read_csv(r'safetoswim_transformed.csv',index=False)
-one_year = max(data["SampleDate"]) - datetime.timedelta(weeks = 52)
-data = data[data["SampleDate"] >= one_year]
-ndata = data[data["SampleDate"] < one_year]
+data_old = pandas.read_csv(r'safetoswim_transformed.csv')
+one_year = max(data_old["SampleDate"]) - datetime.timedelta(weeks = 54)
+data_old = data_old[data_old["SampleDate"] >= one_year]
+data = [data,data_old]
+data = pandas.concat(data)
+del data_old
 
 # separate data into sets for calcualion based on data quality
 data_for_calc     = data[~data["ResultQualCode"].isin(['ND','NR','DNQ'])]
@@ -219,12 +201,13 @@ data_entero     = geomean.gm_calc_42(data_entero)
 data_ecoli      = geomean.gm_calc_42(data_ecoli)
 
 # recombine datasets, do exceedance mapping
-data = [ndata,data_entero,data_ecoli,data_fecal_coli,data_total_coli,data_not_for_calc]
+data = [data_entero,data_ecoli,data_fecal_coli,data_total_coli,data_not_for_calc]
 data = pandas.concat(data)
+del data_fecal_coli,data_entero,data_ecoli,data_total_coli,data_for_calc,data_not_for_calc
 data = data.sort_index(ascending=False)
 data = ssm_map_exceedance(data)
 data = gm_30_map_exceedance(data)
 data = gm_42_map_exceedance(data)
 
-#### OVERWRITE CSV ####
-data.to_csv('safetoswim_transformed.csv',index=False)
+#### APPEND TO CSV ####
+data.to_csv('safetoswim_transformed.csv', mode='a', header=False)

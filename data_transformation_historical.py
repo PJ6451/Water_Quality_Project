@@ -52,7 +52,8 @@ def ssm_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         (data['ResultQualCode'] == 'DNQ'),
         (data['Result'] == data["SSM_WQO"]),
         (data["ResultQualCode"] == 'P') & (data['Result'] < data["SSM_WQO"]),
-        (data["ResultQualCode"] == 'P') & (data['Result'] > data["SSM_WQO"])
+        (data["ResultQualCode"] == 'P') & (data['Result'] > data["SSM_WQO"]),
+        (pandas.isna(data["SSM_WQO"]))
         ]
     #### LIST OF VALUES FOR EACH CONDITION ####
     values = [
@@ -69,9 +70,10 @@ def ssm_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         'Not Detected/Recorded',
         'Not Detected/Recorded',
         'Not Detected/Recorded',
+        'Equals Limit',
         'Does Not Exceed Limit',
-        'Does Not Exceed Limit',
-        'Does Exceed Limit'
+        'Does Exceed Limit',
+        'Not Applicable'
         ]
     #### MAP VALUES ####
     data['SSM_Exceedance'] = numpy.select(conditions, values)
@@ -83,13 +85,13 @@ def gm_30_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         (data["Geomean30"] > data['GM_30_WQO']),
         (data["Geomean30"] < data['GM_30_WQO']),
         (data["Geomean30"] == data['GM_30_WQO']),
-        (data["Geomean30"] == numpy.nan)
+        (pandas.isna(data["Geomean30"]))
         ]
     #### LIST OF VALUES FOR EACH CONDITION ####
     values = [
         'Does Exceed Limit', 
         'Does Not Exceed Limit',
-        'Does Not Exceed Limit',  
+        'Equals Limit',  
         'Not Determined'
         ]
     #### MAP VALUES ####
@@ -102,36 +104,17 @@ def gm_42_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         (data["Geomean42"] > data['GM_42_WQO']),
         (data["Geomean42"] < data['GM_42_WQO']),
         (data["Geomean42"] == data['GM_42_WQO']),
-        (data["Geomean42"] == numpy.nan)
+        (pandas.isna(data["Geomean42"]))
         ]
     #### LIST OF VALUES FOR EACH CONDITION ####
     values = [
         'Does Exceed Limit', 
         'Does Not Exceed Limit',
-        'Does Not Exceed Limit',  
+        'Equals Limit',  
         'Not Determined'
         ]
     #### MAP VALUES ####
     data['GM_42_Exceedance'] = numpy.select(conditions, values)
-    return data
-
-def stv_42_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
-    #### LIST OF CONDITIONS ####
-    conditions = [
-        (data["STV"] > data['STV_WQO']),
-        (data["STV"] < data['STV_WQO']),
-        (data["STV"] == data['STV_WQO']),
-        (data["STV"] == 'Not Calculated')
-        ]
-    #### LIST OF VALUES FOR EACH CONDITION ####
-    values = [
-        'Does Exceed Limit', 
-        'Does Not Exceed Limit',
-        'Does Not Exceed Limit',  
-        'Not Determined'
-        ]
-    #### MAP VALUES ####
-    data['STV_Exceedance'] = numpy.select(conditions, values)
     return data
 
 def data_transform(data: pandas.DataFrame) -> pandas.DataFrame:
@@ -188,12 +171,10 @@ def data_transform(data: pandas.DataFrame) -> pandas.DataFrame:
 
     #### ADD WQO COLUMNS ####
     data["SSM_WQO"] = data["DW_AnalyteName"].map(ssm_dic)
-    data["STV_WQO"] = data["DW_AnalyteName"].map(stv_dic)
     data["GM_30_WQO"] = data["DW_AnalyteName"].map(gm_30_dic)
     data["GM_42_WQO"] = data["DW_AnalyteName"].map(gm_42_dic)
 
     #### ADD COLUMNS FOR GEOMEANS ####
-    data['STV'] = numpy.nan
     data['Geomean30'] = numpy.nan
     data['Geomean42'] = numpy.nan
 
@@ -206,20 +187,17 @@ data2010    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6f
 data2020    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/1987c159-ce07-47c6-8d4f-4483db6e6460/download/safetoswim_2020-present_2022-06-22.csv')
 
 #### COMBINE AND TRANSFORM DATA ####
-data12 = [data1969,data2010]
-data12 = pandas.concat(data12)
-del data1969, data2010
-data12 = data_transform(data12)
-data3 = data_transform(data2020)
+data123 = [data1969,data2010,data2020]
+data123 = pandas.concat(data123)
+data123 = data_transform(data123)
+del data1969,data2010,data2020
 
 
 #### DO CALCULATIONS/MAPPING ####
-gm30markers = ["Coliform, Fecal", "Coliform, Total"]
-gm42markers = ["E. coli"]
-
 # separate data into sets for calcualion based on data quality
-data_for_calc     = data3[~data3["ResultQualCode"].isin(['ND','NR','DNQ'])]
-data_not_for_calc = data3[data3["ResultQualCode"].isin(['ND','NR','DNQ'])]
+data_for_calc     = data123[~data123["ResultQualCode"].isin(['ND','NR','DNQ'])]
+data_not_for_calc = data123[data123["ResultQualCode"].isin(['ND','NR','DNQ'])]
+del data123
 
 # separate data into sets for calcualion based on reg requirements
 data_entero     = data_for_calc[data_for_calc["DW_AnalyteName"] == "Enterococcus"] 
@@ -235,8 +213,9 @@ data_entero     = geomean.gm_calc_42(data_entero)
 data_ecoli      = geomean.gm_calc_42(data_ecoli)
 
 # recombine datasets, do exceedance mapping
-data = [data12,data_entero,data_ecoli,data_fecal_coli,data_total_coli,data_not_for_calc]
+data = [data_entero,data_ecoli,data_fecal_coli,data_total_coli,data_not_for_calc]
 data = pandas.concat(data)
+del data_fecal_coli,data_entero,data_ecoli,data_total_coli,data_for_calc,data_not_for_calc
 data = data.sort_index(ascending=False)
 data = ssm_map_exceedance(data)
 data = gm_30_map_exceedance(data)

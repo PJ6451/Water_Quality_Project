@@ -10,6 +10,7 @@ import ca_open_data_api_2020
 import pandas
 import numpy
 import geomean
+import datetime
 
 pandas.options.mode.chained_assignment = None  # default='warn'
 
@@ -160,9 +161,7 @@ def data_transform(data: pandas.DataFrame) -> pandas.DataFrame:
     for col in num_cols:
         data[col] = pandas.to_numeric(data[col])
     
-    dates = data["SampleDate"]
-    dates_split = dates.str.split(pat="T",expand=True)
-    data["SampleDate"] = pandas.to_datetime(dates_split[0])
+    data["SampleDate"] = pandas.to_datetime(data["SampleDate"])
     data.set_index('SampleDate', inplace=True)
     data = data.sort_index(ascending=False)
 
@@ -198,10 +197,34 @@ data.to_csv('safetoswim_transformed.csv',index=False, mode='a', header=False)
 
 #### READ CSV TO CALCULATE GEOMEAN ####
 data = pandas.read_csv(r'safetoswim_transformed.csv',index=False)
-data = geomean.gm_calc(data)
+one_year = max(data["SampleDate"]) - datetime.timedelta(weeks = 52)
+data = data[data["SampleDate"] >= one_year]
+ndata = data[data["SampleDate"] < one_year]
+
+# separate data into sets for calcualion based on data quality
+data_for_calc     = data[~data["ResultQualCode"].isin(['ND','NR','DNQ'])]
+data_not_for_calc = data[data["ResultQualCode"].isin(['ND','NR','DNQ'])]
+
+# separate data into sets for calcualion based on reg requirements
+data_entero     = data_for_calc[data_for_calc["DW_AnalyteName"] == "Enterococcus"] 
+data_ecoli      = data_for_calc[data_for_calc["DW_AnalyteName"] == "E. coli"]
+data_fecal_coli = data_for_calc[data_for_calc["DW_AnalyteName"] == "Coliform, Fecal"]
+data_total_coli = data_for_calc[data_for_calc["DW_AnalyteName"] == "Coliform, Total"] 
+
+# Perform calculations
+data_fecal_coli = geomean.gm_calc_30(data_fecal_coli)
+data_total_coli = geomean.gm_calc_30(data_total_coli)
+data_entero     = geomean.gm_calc_30(data_entero)
+data_entero     = geomean.gm_calc_42(data_entero)
+data_ecoli      = geomean.gm_calc_42(data_ecoli)
+
+# recombine datasets, do exceedance mapping
+data = [ndata,data_entero,data_ecoli,data_fecal_coli,data_total_coli,data_not_for_calc]
+data = pandas.concat(data)
+data = data.sort_index(ascending=False)
+data = ssm_map_exceedance(data)
 data = gm_30_map_exceedance(data)
 data = gm_42_map_exceedance(data)
-data = stv_42_map_exceedance(data)
 
 #### OVERWRITE CSV ####
 data.to_csv('safetoswim_transformed.csv',index=False)

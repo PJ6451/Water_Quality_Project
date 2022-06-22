@@ -180,11 +180,9 @@ def data_transform(data: pandas.DataFrame) -> pandas.DataFrame:
     for col in num_cols:
         data[col] = pandas.to_numeric(data[col])
     
-    dates = data["SampleDate"]
-    dates_split = dates.str.split(pat="T",expand=True)
-    data["SampleDate"] = pandas.to_datetime(dates_split[0])
-    data.set_index('SampleDate', inplace=True)
-    data = data.sort_index(ascending=False)
+    data["SampleDate"] = pandas.to_datetime(data["SampleDate"])
+    data = data.sort_values(by="SampleDate",ascending=False)
+    data.set_index('SampleDate',inplace = True)
     
     data["Result"] = data["Result"].abs()
 
@@ -203,42 +201,46 @@ def data_transform(data: pandas.DataFrame) -> pandas.DataFrame:
 
 
 #### LOAD DATA #####
-data1    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/18c57345-bf87-4c46-b358-b634d36be4d2/download/safetoswim_1969-2010_2022-06-17.csv')
-data2    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/7639446f-8c62-43d9-a526-8bc7952dd8bd/download/safetoswim_2010-2020_2022-06-17.csv')
-data3    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/1987c159-ce07-47c6-8d4f-4483db6e6460/download/safetoswim_2020-present_2022-06-17.csv')
+data1969    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/18c57345-bf87-4c46-b358-b634d36be4d2/download/safetoswim_1969-2010_2022-06-22.csv')
+data2010    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/7639446f-8c62-43d9-a526-8bc7952dd8bd/download/safetoswim_2010-2020_2022-06-22.csv')
+data2020    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6ffd17a4c139/resource/1987c159-ce07-47c6-8d4f-4483db6e6460/download/safetoswim_2020-present_2022-06-22.csv')
 
 #### COMBINE AND TRANSFORM DATA ####
-data12 = [data1,data2]
+data12 = [data1969,data2010]
 data12 = pandas.concat(data12)
+del data1969, data2010
 data12 = data_transform(data12)
-data3 = data_transform(data3)
+data3 = data_transform(data2020)
 
 
 #### DO CALCULATIONS/MAPPING ####
-gm30markers = ["Enterococcus", "Coliform, Fecal", "Coliform, Total"]
-gm42markers = ["Enterococcus", "E. coli"]
+gm30markers = ["Coliform, Fecal", "Coliform, Total"]
+gm42markers = ["E. coli"]
 
 # separate data into sets for calcualion based on data quality
-data_for_calc = data3[~data3["ResultQualCode"].isin(['ND','NR','DNQ'])]
+data_for_calc     = data3[~data3["ResultQualCode"].isin(['ND','NR','DNQ'])]
 data_not_for_calc = data3[data3["ResultQualCode"].isin(['ND','NR','DNQ'])]
 
-# separate data into sets for calcualion based on reg requirements 
-data_calc_30 = data_for_calc[data_for_calc["DW_AnalyteName"].isin(gm30markers)]
-data_calc_42 = data_for_calc[data_for_calc["DW_AnalyteName"].isin(gm42markers)]
+# separate data into sets for calcualion based on reg requirements
+data_entero     = data_for_calc[data_for_calc["DW_AnalyteName"] == "Enterococcus"] 
+data_ecoli      = data_for_calc[data_for_calc["DW_AnalyteName"] == "E. coli"]
+data_fecal_coli = data_for_calc[data_for_calc["DW_AnalyteName"] == "Coliform, Fecal"]
+data_total_coli = data_for_calc[data_for_calc["DW_AnalyteName"] == "Coliform, Total"] 
 
 # Perform calculations
-data_calc_30 = geomean.gm_calc(data_calc_30,"30D")
-data_calc_42 = geomean.gm_calc(data_calc_30,"42D")
+data_fecal_coli = geomean.gm_calc_30(data_fecal_coli)
+data_total_coli = geomean.gm_calc_30(data_total_coli)
+data_entero     = geomean.gm_calc_30(data_entero)
+data_entero     = geomean.gm_calc_42(data_entero)
+data_ecoli      = geomean.gm_calc_42(data_ecoli)
 
 # recombine datasets, do exceedance mapping
-data3 = [data_calc_30,data_calc_42,data_not_for_calc]
-data3 = pandas.concat(data3)
-data = [data12,data3]
-data = pandas.concat(data12)
+data = [data12,data_entero,data_ecoli,data_fecal_coli,data_total_coli,data_not_for_calc]
+data = pandas.concat(data)
 data = data.sort_index(ascending=False)
 data = ssm_map_exceedance(data)
 data = gm_30_map_exceedance(data)
 data = gm_42_map_exceedance(data)
 
 #### SAVE TO CSV ####
-data.to_csv('safetoswim_transformed.csv',index=False)
+data.to_csv('safetoswim_transformed.csv')

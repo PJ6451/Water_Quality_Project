@@ -218,14 +218,19 @@ data3 = data_transform(data3)
 gm30markers = ["Enterococcus", "Coliform, Fecal", "Coliform, Total"]
 gm42markers = ["Enterococcus", "E. coli"]
 
+# separate data into sets for calcualion based on data quality
 data_for_calc = data3[~data3["ResultQualCode"].isin(['ND','NR','DNQ'])]
 data_not_for_calc = data3[data3["ResultQualCode"].isin(['ND','NR','DNQ'])]
-data_calc_30 = data3[data3["DW_AnalyteName"].isin(gm30markers)]
-data_calc_42 = data3[data3["DW_AnalyteName"].isin(gm42markers)]
 
+# separate data into sets for calcualion based on reg requirements 
+data_calc_30 = data_for_calc[data_for_calc["DW_AnalyteName"].isin(gm30markers)]
+data_calc_42 = data_for_calc[data_for_calc["DW_AnalyteName"].isin(gm42markers)]
+
+# Perform calculations
 data_calc_30 = geomean.gm_calc(data_calc_30,"30D")
 data_calc_42 = geomean.gm_calc(data_calc_30,"42D")
 
+# recombine datasets, do exceedance mapping
 data3 = [data_calc_30,data_calc_42,data_not_for_calc]
 data3 = pandas.concat(data3)
 data = [data12,data3]

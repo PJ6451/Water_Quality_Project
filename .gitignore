@@ -146,6 +146,7 @@ cython_debug/
 
 # csv file
 safetoswim_transformed.csv
+safetoswim_sandeigo_transformed.csv
 
 # PyCharm
 #  JetBrains specific template is maintainted in a separate JetBrains.gitignore that can

@@ -1,4 +1,4 @@
-# Water_Quality_Project
+# CEDEN Water Quality Project
 ## Background
 The safe to swim program was developed to let the public know which public waters are safe for recreational use. This program is based on testing the waters regularly for certain bacteria and chemical markers. The five markers of interest for this project are: E. Coli, Enterococci, Total Coliform, Fecal Coliform, and HF183. Water Quality Objectives (WQO’s) are maximum amounts of the specific markers that can be present in a given body of water to be considered safe for use. These bodies of water are tested regularly to determine whether they meet the requirements. The sources for WQO’s and testing requirements can be found in the following sources:
 -	[Ocean Plan](https://www.waterboards.ca.gov/water_issues/programs/ocean/docs/oceanplan2019.pdf)

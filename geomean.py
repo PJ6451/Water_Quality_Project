@@ -3,12 +3,12 @@
 # for relevant dates
 ############################
 
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 
 def geo_mean(data):
     #### CALCULATES GEOMEAN ####
-    return (numpy.prod(data))**(1/data.shape[0])
+    return (np.prod(data))**(1/data.shape[0])
 
 def gm_calc_30(data):
     data_to_return = []
@@ -17,7 +17,7 @@ def gm_calc_30(data):
         station_data["Geomean30"] = station_data['Result'][::-1].rolling("30D", min_periods = 5).apply(geo_mean).values
         data_to_return.append(station_data)
     
-    data = pandas.concat(data_to_return)
+    data = pd.concat(data_to_return)
     return data
 
 def gm_calc_42(data):
@@ -27,5 +27,5 @@ def gm_calc_42(data):
         station_data["Geomean42"] = station_data['Result'][::-1].rolling("42D", min_periods = 5).apply(geo_mean).values
         data_to_return.append(station_data)
     
-    data = pandas.concat(data_to_return)
+    data = pd.concat(data_to_return)
     return data

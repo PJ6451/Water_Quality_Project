@@ -5,15 +5,15 @@
 # a single csv for later use
 #################################### 
 
-import pandas
-import numpy
+import pandas as pd
+import numpy as np
 import geomean
 
-pandas.options.mode.chained_assignment = None  # default='warn'
+pd.options.mode.chained_assignment = None  # default='warn'
 
-def read_data(path:str) -> pandas.DataFrame:
+def read_data(path:str) -> pd.DataFrame:
     #### READ CSV ####
-    data = pandas.read_csv(path,low_memory=False)
+    data = pd.read_csv(path,low_memory=False)
 
     #### KEEP/RAARANGE COLUMNS ####
     columns = [
@@ -34,7 +34,7 @@ def read_data(path:str) -> pandas.DataFrame:
     data = data[columns]
     return data
 
-def ssm_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:  
+def ssm_map_exceedance(data:pd.DataFrame) -> pd.DataFrame:  
     #### LIST OF CONDITIONS ####
     conditions = [
         (data["ResultQualCode"] == '=') & (data['Result'] > data["SSM_WQO"]),
@@ -53,7 +53,7 @@ def ssm_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         (data['Result'] == data["SSM_WQO"]),
         (data["ResultQualCode"] == 'P') & (data['Result'] < data["SSM_WQO"]),
         (data["ResultQualCode"] == 'P') & (data['Result'] > data["SSM_WQO"]),
-        (pandas.isna(data["SSM_WQO"]))
+        (pd.isna(data["SSM_WQO"]))
         ]
     #### LIST OF VALUES FOR EACH CONDITION ####
     values = [
@@ -76,16 +76,16 @@ def ssm_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         'Not Applicable'
         ]
     #### MAP VALUES ####
-    data['SSM_Exceedance'] = numpy.select(conditions, values)
+    data['SSM_Exceedance'] = np.select(conditions, values)
     return data
 
-def gm_30_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
+def gm_30_map_exceedance(data:pd.DataFrame) -> pd.DataFrame:
     #### LIST OF CONDITIONS ####
     conditions = [
         (data["Geomean30"] > data['GM_30_WQO']),
         (data["Geomean30"] < data['GM_30_WQO']),
         (data["Geomean30"] == data['GM_30_WQO']),
-        (pandas.isna(data["Geomean30"]))
+        (pd.isna(data["Geomean30"]))
         ]
     #### LIST OF VALUES FOR EACH CONDITION ####
     values = [
@@ -95,16 +95,16 @@ def gm_30_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         'Not Determined'
         ]
     #### MAP VALUES ####
-    data['GM_30_Exceedance'] = numpy.select(conditions, values)
+    data['GM_30_Exceedance'] = np.select(conditions, values)
     return data  
 
-def gm_42_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
+def gm_42_map_exceedance(data:pd.DataFrame) -> pd.DataFrame:
     #### LIST OF CONDITIONS ####
     conditions = [
         (data["Geomean42"] > data['GM_42_WQO']),
         (data["Geomean42"] < data['GM_42_WQO']),
         (data["Geomean42"] == data['GM_42_WQO']),
-        (pandas.isna(data["Geomean42"]))
+        (pd.isna(data["Geomean42"]))
         ]
     #### LIST OF VALUES FOR EACH CONDITION ####
     values = [
@@ -114,10 +114,10 @@ def gm_42_map_exceedance(data:pandas.DataFrame) -> pandas.DataFrame:
         'Not Determined'
         ]
     #### MAP VALUES ####
-    data['GM_42_Exceedance'] = numpy.select(conditions, values)
+    data['GM_42_Exceedance'] = np.select(conditions, values)
     return data
 
-def data_transform(data: pandas.DataFrame) -> pandas.DataFrame:
+def data_transform(data: pd.DataFrame) -> pd.DataFrame:
     #### DICTIONARIES ####
     ssm_dic = {
         "Enterococcus":104,
@@ -161,9 +161,9 @@ def data_transform(data: pandas.DataFrame) -> pandas.DataFrame:
     ]
 
     for col in num_cols:
-        data[col] = pandas.to_numeric(data[col])
+        data[col] = pd.to_numeric(data[col])
     
-    data["SampleDate"] = pandas.to_datetime(data["SampleDate"])
+    data["SampleDate"] = pd.to_datetime(data["SampleDate"])
     data = data.sort_values(by="SampleDate",ascending=False)
     data.set_index('SampleDate',inplace = True)
     
@@ -175,8 +175,8 @@ def data_transform(data: pandas.DataFrame) -> pandas.DataFrame:
     data["GM_42_WQO"] = data["DW_AnalyteName"].map(gm_42_dic)
 
     #### ADD COLUMNS FOR GEOMEANS ####
-    data['Geomean30'] = numpy.nan
-    data['Geomean42'] = numpy.nan
+    data['Geomean30'] = np.nan
+    data['Geomean42'] = np.nan
 
     return data
 
@@ -188,7 +188,7 @@ data2020    = read_data(r'https://data.ca.gov/dataset/6723ab78-4530-4e97-ba5e-6f
 
 #### COMBINE AND TRANSFORM DATA ####
 data123 = [data1969,data2010,data2020]
-data123 = pandas.concat(data123)
+data123 = pd.concat(data123)
 data123 = data_transform(data123)
 del data1969,data2010,data2020
 
@@ -214,7 +214,7 @@ data_ecoli      = geomean.gm_calc_42(data_ecoli)
 
 # recombine datasets, do exceedance mapping
 data = [data_entero,data_ecoli,data_fecal_coli,data_total_coli,data_not_for_calc]
-data = pandas.concat(data)
+data = pd.concat(data)
 del data_fecal_coli,data_entero,data_ecoli,data_total_coli,data_for_calc,data_not_for_calc
 data = data.sort_index(ascending=False)
 data = ssm_map_exceedance(data)

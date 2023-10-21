@@ -5,12 +5,12 @@
 ####################################
 
 import requests
-import pandas
+import pandas as pd
 import datetime
 
 def get_date() -> str:
     #### GETS MAX DATE FROM PREVIOUS DATE SET ####
-    dates = pandas.read_csv(
+    dates = pd.read_csv(
         r'safetoswim_transformed.csv',
         usecols = ["SampleDate"], 
         parse_dates = ["SampleDate"]
@@ -36,7 +36,7 @@ def api_call(url_query:str) -> dict:
         raise Exception(response.status_code,response.text)
     return response.json()
 
-def get_data() -> pandas.DataFrame:
+def get_data() -> pd.DataFrame:
     #### GET DATE ####
     date = get_date()
     #### GET URL STRING ####
@@ -49,7 +49,7 @@ def get_data() -> pandas.DataFrame:
     jsdata = my_dict['result']['records']
     
     #### TRANSFORM RAW DATA TO PANDAS DATAFRAME ####
-    data = pandas.DataFrame(jsdata)
+    data = pd.DataFrame(jsdata)
 
     #### KEEP/REARANGE COLUMNS ####
     columns = [

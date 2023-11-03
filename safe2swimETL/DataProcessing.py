@@ -35,11 +35,11 @@ class DataProcessing:
         ]
         self.position_columns = ["TargetLatitude", "TargetLongitude"]
 
-    def data_processing(self, path):
-        data = pl.read_csv(path, ignore_errors=True)
-        clean_data = self.data_cleaning(data)
-        clean_data_with_cols_maps = self.add_columns_and_dict_mappings(clean_data)
-        return self.split_data(clean_data_with_cols_maps)
+    def data_processing(self, data):
+        data = self.data_cleaning(data)
+        data = self.add_columns_and_dict_mappings(data)
+        data = self.add_calc_flag(data)
+        return data
 
     def data_cleaning(self, data: pl.DataFrame) -> pl.DataFrame:
         return (
@@ -63,7 +63,7 @@ class DataProcessing:
             pl.col("DW_AnalyteName").map_dict(self.gm_42_dic).alias("GM_42_WQO"),
         )
 
-    def split_data(self, data: pl.DataFrame):
+    def add_calc_flag(self, data: pl.DataFrame):
         return data.with_columns(
             pl.when(pl.col("ResultQualCode").is_in(["ND", "NR", "DNQ", "NA"]))
             .then(pl.lit(False))
